@@ -1,0 +1,1204 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#16a34a">
+  <meta name="description" content="Aplikasi jualan UMKM - kelola stok, penjualan, dan keuntungan">
+  <link rel="manifest" href="manifest.json">
+  <title>Aplikasi Jualan UMKM</title>
+  <style>
+    :root {
+      --primary: #16a34a;
+      --primary-dark: #15803d;
+      --primary-light: #dcfce7;
+      --bg: #f1f5f9;
+      --card: #ffffff;
+      --text: #0f172a;
+      --muted: #64748b;
+      --danger: #dc2626;
+      --danger-bg: #fee2e2;
+      --warning: #d97706;
+      --success: #16a34a;
+      --success-bg: #dcfce7;
+      --border: #e2e8f0;
+      --shadow: 0 1px 3px rgba(0,0,0,0.06);
+      --radius: 14px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      padding-bottom: 76px;
+      min-height: 100vh;
+      overscroll-behavior: none;
+    }
+    .header {
+      background: linear-gradient(135deg, var(--primary), #15803d);
+      color: white;
+      padding: 14px 18px 16px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 12px rgba(22,163,74,0.25);
+    }
+    .header h1 { font-size: 1.2rem; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+    .header p { font-size: 0.78rem; opacity: 0.9; margin-top: 2px; }
+    .container { padding: 14px; max-width: 640px; margin: 0 auto; }
+    .card {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 16px;
+      margin-bottom: 12px;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border);
+    }
+    .card-title {
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--muted);
+      margin-bottom: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+    .stat-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    .stat-card {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 14px 12px;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border);
+      text-align: center;
+    }
+    .stat-card .value { font-size: 1.2rem; font-weight: 700; }
+    .stat-card .label { font-size: 0.72rem; color: var(--muted); margin-top: 3px; }
+    .stat-card.sales .value { color: #2563eb; }
+    .stat-card.profit .value { color: var(--success); }
+    .stat-card.expense .value { color: var(--danger); }
+    .stat-card.stock .value { color: var(--warning); }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 12px 18px;
+      border: none;
+      border-radius: 12px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.15s;
+      width: 100%;
+    }
+    .btn:active { transform: scale(0.97); }
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-secondary { background: #e2e8f0; color: var(--text); }
+    .btn-danger { background: var(--danger-bg); color: var(--danger); }
+    .btn-outline { background: transparent; border: 1.5px solid var(--border); color: var(--text); }
+    .btn-sm { padding: 7px 11px; font-size: 0.8rem; width: auto; border-radius: 8px; }
+    .btn-group { display: flex; gap: 8px; margin-top: 12px; }
+    .btn-group .btn { flex: 1; }
+    .form-group { margin-bottom: 13px; }
+    .form-group label {
+      display: block;
+      font-size: 0.82rem;
+      font-weight: 600;
+      margin-bottom: 5px;
+    }
+    .form-group input, .form-group select, .form-group textarea {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1.5px solid var(--border);
+      border-radius: 11px;
+      font-size: 1rem;
+      background: white;
+    }
+    .form-group input:focus, .form-group select:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(22,163,74,0.12);
+    }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .search-box { position: relative; margin-bottom: 12px; }
+    .search-box input {
+      width: 100%;
+      padding: 12px 14px 12px 40px;
+      border: 1.5px solid var(--border);
+      border-radius: 12px;
+      font-size: 0.95rem;
+      background: white;
+    }
+    .search-box::before {
+      content: '🔍';
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+    .product-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding: 14px 0;
+      border-bottom: 1px solid var(--border);
+      gap: 12px;
+    }
+    .product-item:last-child { border-bottom: none; }
+    .product-info { flex: 1; min-width: 0; }
+    .product-info h3 { font-size: 0.98rem; font-weight: 600; margin-bottom: 2px; }
+    .product-info .meta { font-size: 0.78rem; color: var(--muted); }
+    .product-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+    .product-stock { text-align: right; flex-shrink: 0; }
+    .product-stock .qty { font-size: 1.15rem; font-weight: 700; }
+    .product-stock .qty.low { color: var(--danger); }
+    .list-item { padding: 12px 0; border-bottom: 1px solid var(--border); }
+    .list-item:last-child { border-bottom: none; }
+    .list-header { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+    .list-name { font-weight: 600; font-size: 0.95rem; }
+    .list-amount { font-weight: 700; white-space: nowrap; }
+    .list-amount.plus { color: var(--success); }
+    .list-amount.minus { color: var(--danger); }
+    .list-meta { font-size: 0.78rem; color: var(--muted); margin-top: 3px; }
+    .list-actions { margin-top: 6px; }
+    .cart-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .cart-item:last-child { border-bottom: none; }
+    .cart-qty-control { display: flex; align-items: center; gap: 8px; }
+    .cart-qty-control button {
+      width: 32px; height: 32px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: white;
+      font-size: 1.1rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .cart-total {
+      background: var(--primary-light);
+      border-radius: 12px;
+      padding: 14px;
+      margin-top: 12px;
+    }
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 20px;
+      font-size: 0.68rem;
+      font-weight: 600;
+    }
+    .badge-low { background: var(--danger-bg); color: var(--danger); }
+    .badge-ok { background: var(--success-bg); color: var(--success); }
+    .badge-cat { background: #e0e7ff; color: #4338ca; margin-left: 6px; }
+    .alert {
+      padding: 12px 16px;
+      border-radius: 11px;
+      margin-bottom: 12px;
+      font-size: 0.9rem;
+      display: none;
+      animation: fadeIn 0.25s ease;
+    }
+    .alert.show { display: block; }
+    .alert-success { background: var(--success-bg); color: #166534; }
+    .alert-error { background: var(--danger-bg); color: #991b1b; }
+    .alert-info { background: #e0f2fe; color: #075985; }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .bottom-nav {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      background: white;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-around;
+      padding: 6px 0 max(6px, env(safe-area-inset-bottom));
+      z-index: 100;
+      box-shadow: 0 -2px 12px rgba(0,0,0,0.04);
+    }
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1px;
+      padding: 6px 10px;
+      color: var(--muted);
+      font-size: 0.68rem;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+      background: none;
+      min-width: 60px;
+    }
+    .nav-item.active { color: var(--primary); }
+    .nav-item .icon { font-size: 1.35rem; line-height: 1.2; }
+    .page { display: none; }
+    .page.active { display: block; }
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15,23,42,0.45);
+      z-index: 200;
+      display: none;
+      align-items: flex-end;
+      justify-content: center;
+      backdrop-filter: blur(2px);
+    }
+    .modal-overlay.show { display: flex; }
+    .modal {
+      background: white;
+      width: 100%;
+      max-width: 520px;
+      border-radius: 18px 18px 0 0;
+      padding: 20px 18px 28px;
+      max-height: 92vh;
+      overflow-y: auto;
+      animation: slideUp 0.28s cubic-bezier(0.32, 0.72, 0, 1);
+    }
+    @keyframes slideUp {
+      from { transform: translateY(100%); }
+      to { transform: translateY(0); }
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    .modal-header h2 { font-size: 1.12rem; font-weight: 700; }
+    .modal-close {
+      background: #f1f5f9;
+      border: none;
+      width: 34px; height: 34px;
+      border-radius: 50%;
+      font-size: 1.3rem;
+      color: var(--muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .empty { text-align: center; padding: 36px 16px; color: var(--muted); }
+    .empty .icon { font-size: 2.8rem; margin-bottom: 10px; }
+    .empty p { font-size: 0.9rem; }
+    .section-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      margin: 16px 0 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .tabs {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 14px;
+      background: #e2e8f0;
+      padding: 4px;
+      border-radius: 12px;
+    }
+    .tab {
+      flex: 1;
+      padding: 9px;
+      border: none;
+      background: transparent;
+      border-radius: 9px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--muted);
+      cursor: pointer;
+    }
+    .tab.active {
+      background: white;
+      color: var(--primary);
+      box-shadow: var(--shadow);
+    }
+    .settings-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 0;
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+    }
+    .settings-item:last-child { border-bottom: none; }
+    .settings-item .left { display: flex; align-items: center; gap: 12px; }
+    .settings-item .icon { font-size: 1.3rem; }
+    .flex-between { display: flex; justify-content: space-between; align-items: center; }
+    .mt-1 { margin-top: 6px; }
+    .mt-2 { margin-top: 10px; }
+    .mb-1 { margin-bottom: 6px; }
+    .text-muted { color: var(--muted); }
+    .text-sm { font-size: 0.85rem; }
+    .hidden { display: none !important; }
+    @media (min-width: 600px) {
+      .modal { border-radius: 18px; margin-bottom: 24px; }
+      .modal-overlay { align-items: center; }
+    }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <h1>🛒 Aplikasi Jualan</h1>
+    <p>Kelola stok, penjualan & keuntungan</p>
+  </header>
+
+  <div class="container">
+    <div id="alert" class="alert"></div>
+
+    <!-- DASHBOARD -->
+    <div id="page-dashboard" class="page active">
+      <div class="stat-grid">
+        <div class="stat-card sales">
+          <div class="value" id="stat-today-sales">Rp 0</div>
+          <div class="label">Omzet Hari Ini</div>
+        </div>
+        <div class="stat-card profit">
+          <div class="value" id="stat-today-profit">Rp 0</div>
+          <div class="label">Profit Hari Ini</div>
+        </div>
+        <div class="stat-card expense">
+          <div class="value" id="stat-today-expense">Rp 0</div>
+          <div class="label">Pengeluaran Hari Ini</div>
+        </div>
+        <div class="stat-card stock">
+          <div class="value" id="stat-net-today">Rp 0</div>
+          <div class="label">Bersih Hari Ini</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Ringkasan Keseluruhan</div>
+        <div class="flex-between mb-1"><span class="text-sm">Total Omzet</span><strong id="stat-total-revenue">Rp 0</strong></div>
+        <div class="flex-between mb-1"><span class="text-sm">Total Modal (HPP)</span><strong id="stat-total-cost">Rp 0</strong></div>
+        <div class="flex-between mb-1"><span class="text-sm">Total Pengeluaran</span><strong id="stat-total-expense">Rp 0</strong></div>
+        <div class="flex-between" style="border-top:1px solid var(--border);padding-top:10px;margin-top:8px;">
+          <span style="font-weight:700;">Keuntungan Bersih</span>
+          <strong id="stat-total-net" style="color:var(--success);font-size:1.15rem;">Rp 0</strong>
+        </div>
+      </div>
+
+      <div class="section-title">
+        <span>Stok Menipis</span>
+        <button class="btn btn-sm btn-outline" onclick="showPage('products')">Lihat Semua</button>
+      </div>
+      <div class="card" id="low-stock-list">
+        <div class="empty"><div class="icon">✅</div><p>Semua stok aman</p></div>
+      </div>
+
+      <div class="section-title">Transaksi Terbaru</div>
+      <div class="card" id="recent-tx">
+        <div class="empty"><div class="icon">📋</div><p>Belum ada transaksi</p></div>
+      </div>
+    </div>
+
+    <!-- PRODUCTS -->
+    <div id="page-products" class="page">
+      <button class="btn btn-primary" onclick="openProductModal()">+ Tambah Barang Baru</button>
+      <div class="search-box mt-2">
+        <input type="text" id="search-product" placeholder="Cari nama barang..." oninput="renderProducts()">
+      </div>
+      <div class="section-title">
+        <span>Daftar Barang (<span id="product-count">0</span>)</span>
+      </div>
+      <div class="card" id="product-list">
+        <div class="empty"><div class="icon">📦</div><p>Belum ada barang</p></div>
+      </div>
+    </div>
+
+    <!-- SALES -->
+    <div id="page-sales" class="page">
+      <div class="tabs">
+        <button class="tab active" data-tab="cart" onclick="switchSalesTab('cart')">Keranjang</button>
+        <button class="tab" data-tab="quick" onclick="switchSalesTab('quick')">Jual Cepat</button>
+      </div>
+
+      <div id="sales-cart">
+        <div class="card">
+          <div class="form-group">
+            <label>Pilih Barang</label>
+            <select id="cart-product"><option value="">-- Pilih Barang --</option></select>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Jumlah</label>
+              <input type="number" id="cart-qty" min="1" value="1">
+            </div>
+            <div class="form-group" style="display:flex;align-items:flex-end;">
+              <button type="button" class="btn btn-primary" onclick="addToCart()">+ Tambah</button>
+            </div>
+          </div>
+        </div>
+        <div class="section-title">Keranjang</div>
+        <div class="card" id="cart-list">
+          <div class="empty"><div class="icon">🛒</div><p>Keranjang masih kosong</p></div>
+        </div>
+        <div id="cart-summary" class="hidden">
+          <div class="cart-total">
+            <div class="flex-between mb-1"><span>Total Omzet</span><strong id="cart-revenue">Rp 0</strong></div>
+            <div class="flex-between mb-1"><span>Estimasi Profit</span><strong id="cart-profit" style="color:var(--success)">Rp 0</strong></div>
+            <div class="form-group mt-2">
+              <label>Tanggal Transaksi</label>
+              <input type="date" id="cart-date">
+            </div>
+            <button class="btn btn-primary mt-1" onclick="checkoutCart()">💳 Simpan Penjualan</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="sales-quick" class="hidden">
+        <div class="card">
+          <form id="form-quick-sale" onsubmit="return submitQuickSale(event)">
+            <div class="form-group">
+              <label>Pilih Barang</label>
+              <select id="quick-product" required><option value="">-- Pilih Barang --</option></select>
+            </div>
+            <div class="form-group">
+              <label>Jumlah</label>
+              <input type="number" id="quick-qty" min="1" required value="1">
+            </div>
+            <div class="form-group">
+              <label>Tanggal</label>
+              <input type="date" id="quick-date" required>
+            </div>
+            <div id="quick-preview" class="card" style="background:var(--primary-light);display:none;margin-bottom:12px;">
+              <div class="flex-between"><span>Subtotal</span><strong id="quick-subtotal">Rp 0</strong></div>
+              <div class="flex-between"><span>Profit</span><strong id="quick-profit" style="color:var(--success)">Rp 0</strong></div>
+            </div>
+            <button type="submit" class="btn btn-primary">Simpan Penjualan</button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- REPORTS -->
+    <div id="page-reports" class="page">
+      <div class="tabs">
+        <button class="tab active" data-tab="sales" onclick="switchReportTab('sales')">Penjualan</button>
+        <button class="tab" data-tab="expense" onclick="switchReportTab('expense')">Pengeluaran</button>
+      </div>
+      <div class="card">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Dari</label>
+            <input type="date" id="filter-from">
+          </div>
+          <div class="form-group">
+            <label>Sampai</label>
+            <input type="date" id="filter-to">
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="renderCurrentReport()">Tampilkan Laporan</button>
+      </div>
+
+      <div id="report-sales">
+        <div class="card">
+          <div class="card-title">Ringkasan Penjualan</div>
+          <div class="flex-between mb-1"><span class="text-sm">Jumlah Transaksi</span><strong id="r-sales-count">0</strong></div>
+          <div class="flex-between mb-1"><span class="text-sm">Total Omzet</span><strong id="r-sales-revenue">Rp 0</strong></div>
+          <div class="flex-between mb-1"><span class="text-sm">Total Modal</span><strong id="r-sales-cost">Rp 0</strong></div>
+          <div class="flex-between" style="border-top:1px solid var(--border);padding-top:8px;">
+            <span style="font-weight:700;">Profit Kotor</span>
+            <strong id="r-sales-profit" style="color:var(--success)">Rp 0</strong>
+          </div>
+        </div>
+        <div class="section-title">Detail Transaksi</div>
+        <div class="card" id="report-sales-list">
+          <div class="empty"><div class="icon">📊</div><p>Pilih rentang tanggal</p></div>
+        </div>
+      </div>
+
+      <div id="report-expense" class="hidden">
+        <div class="card">
+          <div class="card-title">Ringkasan Pengeluaran</div>
+          <div class="flex-between mb-1"><span class="text-sm">Jumlah</span><strong id="r-exp-count">0</strong></div>
+          <div class="flex-between">
+            <span style="font-weight:700;">Total Pengeluaran</span>
+            <strong id="r-exp-total" style="color:var(--danger)">Rp 0</strong>
+          </div>
+        </div>
+        <div class="section-title">
+          <span>Daftar Pengeluaran</span>
+          <button class="btn btn-sm btn-primary" onclick="openExpenseModal()">+ Tambah</button>
+        </div>
+        <div class="card" id="report-expense-list">
+          <div class="empty"><div class="icon">💸</div><p>Belum ada pengeluaran</p></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div id="page-settings" class="page">
+      <div class="card">
+        <div class="settings-item" onclick="exportData()">
+          <div class="left"><span class="icon">💾</span><div><strong>Backup Data</strong><div class="text-sm text-muted">Download file JSON</div></div></div>
+          <span>›</span>
+        </div>
+        <div class="settings-item" onclick="document.getElementById('import-file').click()">
+          <div class="left"><span class="icon">📥</span><div><strong>Restore Data</strong><div class="text-sm text-muted">Import dari file JSON</div></div></div>
+          <span>›</span>
+        </div>
+        <input type="file" id="import-file" accept=".json" class="hidden" onchange="importData(event)">
+        <div class="settings-item" onclick="openExpenseModal()">
+          <div class="left"><span class="icon">💸</span><div><strong>Tambah Pengeluaran</strong><div class="text-sm text-muted">Biaya operasional</div></div></div>
+          <span>›</span>
+        </div>
+        <div class="settings-item" onclick="if(confirm('Yakin hapus SEMUA data? Tidak bisa dibatalkan!')) clearAllData()">
+          <div class="left"><span class="icon">🗑️</span><div><strong style="color:var(--danger)">Hapus Semua Data</strong><div class="text-sm text-muted">Reset aplikasi</div></div></div>
+          <span>›</span>
+        </div>
+      </div>
+      <div class="card mt-2">
+        <div class="card-title">Tentang Aplikasi</div>
+        <p class="text-sm text-muted" style="line-height:1.6;">
+          Aplikasi Jualan UMKM v2<br>
+          Data disimpan lokal di perangkat Anda.<br>
+          Tidak membutuhkan internet setelah dibuka.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Nav -->
+  <nav class="bottom-nav">
+    <button class="nav-item active" data-page="dashboard" onclick="showPage('dashboard')"><span class="icon">🏠</span>Beranda</button>
+    <button class="nav-item" data-page="products" onclick="showPage('products')"><span class="icon">📦</span>Barang</button>
+    <button class="nav-item" data-page="sales" onclick="showPage('sales')"><span class="icon">💰</span>Jual</button>
+    <button class="nav-item" data-page="reports" onclick="showPage('reports')"><span class="icon">📊</span>Laporan</button>
+    <button class="nav-item" data-page="settings" onclick="showPage('settings')"><span class="icon">⚙️</span>Lainnya</button>
+  </nav>
+
+  <!-- Modal Product -->
+  <div class="modal-overlay" id="modal-product">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 id="modal-product-title">Tambah Barang</h2>
+        <button class="modal-close" onclick="closeModal('modal-product')">&times;</button>
+      </div>
+      <form id="form-product" onsubmit="return submitProduct(event)">
+        <input type="hidden" id="product-id">
+        <div class="form-group">
+          <label>Nama Barang *</label>
+          <input type="text" id="product-name" required placeholder="Contoh: Kopi Kapal Api">
+        </div>
+        <div class="form-group">
+          <label>Kategori (opsional)</label>
+          <input type="text" id="product-category" placeholder="Contoh: Minuman">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Stok *</label>
+            <input type="number" id="product-stock" min="0" required value="0">
+          </div>
+          <div class="form-group">
+            <label>Satuan</label>
+            <input type="text" id="product-unit" placeholder="pcs / kg / botol" value="pcs">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Harga Modal *</label>
+            <input type="number" id="product-cost" min="0" required placeholder="2000">
+          </div>
+          <div class="form-group">
+            <label>Harga Jual *</label>
+            <input type="number" id="product-price" min="0" required placeholder="3000">
+          </div>
+        </div>
+        <div class="btn-group">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modal-product')">Batal</button>
+          <button type="submit" class="btn btn-primary">Simpan</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Stock -->
+  <div class="modal-overlay" id="modal-stock">
+    <div class="modal">
+      <div class="modal-header">
+        <h2>Tambah Stok</h2>
+        <button class="modal-close" onclick="closeModal('modal-stock')">&times;</button>
+      </div>
+      <form onsubmit="return submitStock(event)">
+        <input type="hidden" id="stock-product-id">
+        <p id="stock-product-name" style="font-weight:600;margin-bottom:14px;"></p>
+        <div class="form-group">
+          <label>Jumlah yang ditambahkan</label>
+          <input type="number" id="stock-qty" min="1" required placeholder="10">
+        </div>
+        <div class="btn-group">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modal-stock')">Batal</button>
+          <button type="submit" class="btn btn-primary">Tambah Stok</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Expense -->
+  <div class="modal-overlay" id="modal-expense">
+    <div class="modal">
+      <div class="modal-header">
+        <h2>Tambah Pengeluaran</h2>
+        <button class="modal-close" onclick="closeModal('modal-expense')">&times;</button>
+      </div>
+      <form onsubmit="return submitExpense(event)">
+        <div class="form-group">
+          <label>Keterangan *</label>
+          <input type="text" id="expense-note" required placeholder="Contoh: Beli plastik, listrik">
+        </div>
+        <div class="form-group">
+          <label>Jumlah (Rp) *</label>
+          <input type="number" id="expense-amount" min="1" required placeholder="50000">
+        </div>
+        <div class="form-group">
+          <label>Tanggal</label>
+          <input type="date" id="expense-date" required>
+        </div>
+        <div class="btn-group">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modal-expense')">Batal</button>
+          <button type="submit" class="btn btn-primary">Simpan</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const STORAGE_KEY = 'aplikasi_jualan_v2';
+    let data = loadData();
+    let cart = [];
+
+    function loadData() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (!parsed.expenses) parsed.expenses = [];
+          return parsed;
+        }
+      } catch (e) {}
+      return { products: [], sales: [], expenses: [] };
+    }
+    function saveData() { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
+
+    function formatRupiah(n) { return 'Rp ' + Number(n || 0).toLocaleString('id-ID'); }
+    function formatDate(str) {
+      if (!str) return '-';
+      return new Date(str + 'T00:00:00').toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+    }
+    function todayStr() { return new Date().toISOString().slice(0, 10); }
+    function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
+    function escapeHtml(s) {
+      return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+    function showAlert(msg, type = 'success') {
+      const el = document.getElementById('alert');
+      el.textContent = msg;
+      el.className = 'alert show alert-' + type;
+      clearTimeout(window._alertTimer);
+      window._alertTimer = setTimeout(() => el.classList.remove('show'), 2800);
+    }
+
+    function showPage(page) {
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+      document.getElementById('page-' + page).classList.add('active');
+      const nav = document.querySelector(`.nav-item[data-page="${page}"]`);
+      if (nav) nav.classList.add('active');
+      if (page === 'dashboard') renderDashboard();
+      if (page === 'products') renderProducts();
+      if (page === 'sales') {
+        populateProductSelects();
+        renderCart();
+        document.getElementById('cart-date').value = todayStr();
+        document.getElementById('quick-date').value = todayStr();
+      }
+      if (page === 'reports') {
+        if (!document.getElementById('filter-from').value) {
+          document.getElementById('filter-from').value = todayStr();
+          document.getElementById('filter-to').value = todayStr();
+        }
+        renderCurrentReport();
+      }
+    }
+
+    function openModal(id) { document.getElementById(id).classList.add('show'); }
+    function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+
+    // PRODUCTS
+    function openProductModal(id = null) {
+      document.getElementById('form-product').reset();
+      document.getElementById('product-id').value = '';
+      document.getElementById('product-unit').value = 'pcs';
+      document.getElementById('modal-product-title').textContent = 'Tambah Barang';
+      if (id) {
+        const p = data.products.find(x => x.id === id);
+        if (p) {
+          document.getElementById('modal-product-title').textContent = 'Edit Barang';
+          document.getElementById('product-id').value = p.id;
+          document.getElementById('product-name').value = p.name;
+          document.getElementById('product-category').value = p.category || '';
+          document.getElementById('product-stock').value = p.stock;
+          document.getElementById('product-unit').value = p.unit || 'pcs';
+          document.getElementById('product-cost').value = p.cost;
+          document.getElementById('product-price').value = p.price;
+        }
+      }
+      openModal('modal-product');
+    }
+
+    function submitProduct(e) {
+      e.preventDefault();
+      const id = document.getElementById('product-id').value;
+      const name = document.getElementById('product-name').value.trim();
+      const category = document.getElementById('product-category').value.trim();
+      const stock = parseInt(document.getElementById('product-stock').value, 10);
+      const unit = document.getElementById('product-unit').value.trim() || 'pcs';
+      const cost = parseFloat(document.getElementById('product-cost').value);
+      const price = parseFloat(document.getElementById('product-price').value);
+      if (!name || isNaN(stock) || isNaN(cost) || isNaN(price)) {
+        showAlert('Lengkapi data dengan benar', 'error');
+        return false;
+      }
+      if (id) {
+        const p = data.products.find(x => x.id === id);
+        if (p) Object.assign(p, { name, category, stock, unit, cost, price });
+      } else {
+        data.products.push({ id: uid(), name, category, stock, unit, cost, price });
+      }
+      saveData();
+      closeModal('modal-product');
+      renderProducts();
+      showAlert(id ? 'Barang diperbarui' : 'Barang berhasil ditambahkan');
+      return false;
+    }
+
+    function renderProducts() {
+      const q = (document.getElementById('search-product')?.value || '').toLowerCase().trim();
+      let list = data.products;
+      if (q) list = list.filter(p => p.name.toLowerCase().includes(q) || (p.category || '').toLowerCase().includes(q));
+      document.getElementById('product-count').textContent = data.products.length;
+      const el = document.getElementById('product-list');
+      if (list.length === 0) {
+        el.innerHTML = `<div class="empty"><div class="icon">📦</div><p>${q ? 'Tidak ditemukan' : 'Belum ada barang'}</p></div>`;
+        return;
+      }
+      el.innerHTML = list.map(p => {
+        const low = p.stock <= 5;
+        return `<div class="product-item">
+          <div class="product-info">
+            <h3>${escapeHtml(p.name)}${p.category ? `<span class="badge badge-cat">${escapeHtml(p.category)}</span>` : ''}</h3>
+            <div class="meta">Modal ${formatRupiah(p.cost)} → Jual ${formatRupiah(p.price)} / ${escapeHtml(p.unit || 'pcs')}</div>
+            <div class="product-actions">
+              <button class="btn btn-sm btn-secondary" onclick="openProductModal('${p.id}')">✏️ Edit</button>
+              <button class="btn btn-sm btn-primary" onclick="openAddStock('${p.id}')">+ Stok</button>
+              <button class="btn btn-sm btn-danger" onclick="deleteProduct('${p.id}')">Hapus</button>
+            </div>
+          </div>
+          <div class="product-stock">
+            <div class="qty ${low ? 'low' : ''}">${p.stock}</div>
+            <span class="badge ${low ? 'badge-low' : 'badge-ok'}">${low ? 'Menipis' : 'Aman'}</span>
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    function openAddStock(id) {
+      const p = data.products.find(x => x.id === id);
+      if (!p) return;
+      document.getElementById('stock-product-id').value = id;
+      document.getElementById('stock-product-name').textContent = `${p.name} (stok sekarang: ${p.stock} ${p.unit || 'pcs'})`;
+      document.getElementById('stock-qty').value = '';
+      openModal('modal-stock');
+    }
+
+    function submitStock(e) {
+      e.preventDefault();
+      const id = document.getElementById('stock-product-id').value;
+      const qty = parseInt(document.getElementById('stock-qty').value, 10);
+      const p = data.products.find(x => x.id === id);
+      if (!p || qty < 1) return false;
+      p.stock += qty;
+      saveData();
+      closeModal('modal-stock');
+      renderProducts();
+      showAlert(`Stok ${p.name} bertambah ${qty}`);
+      return false;
+    }
+
+    function deleteProduct(id) {
+      if (!confirm('Yakin hapus barang ini?')) return;
+      data.products = data.products.filter(p => p.id !== id);
+      saveData();
+      renderProducts();
+      showAlert('Barang dihapus', 'error');
+    }
+
+    // SALES
+    function switchSalesTab(tab) {
+      document.querySelectorAll('#page-sales .tab').forEach(t => t.classList.remove('active'));
+      document.querySelector(`#page-sales .tab[data-tab="${tab}"]`).classList.add('active');
+      document.getElementById('sales-cart').classList.toggle('hidden', tab !== 'cart');
+      document.getElementById('sales-quick').classList.toggle('hidden', tab !== 'quick');
+    }
+
+    function populateProductSelects() {
+      const opts = data.products.filter(p => p.stock > 0)
+        .map(p => `<option value="${p.id}">${escapeHtml(p.name)} (stok ${p.stock}) — ${formatRupiah(p.price)}</option>`).join('');
+      const empty = '<option value="">-- Pilih Barang --</option>';
+      document.getElementById('cart-product').innerHTML = empty + opts;
+      document.getElementById('quick-product').innerHTML = empty + opts;
+    }
+
+    function addToCart() {
+      const pid = document.getElementById('cart-product').value;
+      const qty = parseInt(document.getElementById('cart-qty').value, 10) || 1;
+      if (!pid) { showAlert('Pilih barang dulu', 'error'); return; }
+      const p = data.products.find(x => x.id === pid);
+      if (!p) return;
+      const existing = cart.find(c => c.productId === pid);
+      const currentQty = existing ? existing.qty : 0;
+      if (currentQty + qty > p.stock) {
+        showAlert(`Stok tidak cukup. Sisa: ${p.stock}`, 'error');
+        return;
+      }
+      if (existing) existing.qty += qty;
+      else cart.push({ productId: p.id, name: p.name, qty, price: p.price, cost: p.cost, unit: p.unit || 'pcs' });
+      document.getElementById('cart-qty').value = 1;
+      renderCart();
+      showAlert('Ditambahkan ke keranjang');
+    }
+
+    function changeCartQty(pid, delta) {
+      const item = cart.find(c => c.productId === pid);
+      if (!item) return;
+      const p = data.products.find(x => x.id === pid);
+      const newQty = item.qty + delta;
+      if (newQty < 1) cart = cart.filter(c => c.productId !== pid);
+      else if (p && newQty > p.stock) { showAlert(`Stok maksimal ${p.stock}`, 'error'); return; }
+      else item.qty = newQty;
+      renderCart();
+    }
+
+    function removeFromCart(pid) {
+      cart = cart.filter(c => c.productId !== pid);
+      renderCart();
+    }
+
+    function renderCart() {
+      const el = document.getElementById('cart-list');
+      const summary = document.getElementById('cart-summary');
+      if (cart.length === 0) {
+        el.innerHTML = `<div class="empty"><div class="icon">🛒</div><p>Keranjang masih kosong</p></div>`;
+        summary.classList.add('hidden');
+        return;
+      }
+      let revenue = 0, profit = 0;
+      el.innerHTML = cart.map(item => {
+        const sub = item.price * item.qty;
+        const pr = (item.price - item.cost) * item.qty;
+        revenue += sub; profit += pr;
+        return `<div class="cart-item">
+          <div>
+            <div class="list-name">${escapeHtml(item.name)}</div>
+            <div class="list-meta">${formatRupiah(item.price)} × ${item.qty} = ${formatRupiah(sub)}</div>
+          </div>
+          <div class="cart-qty-control">
+            <button type="button" onclick="changeCartQty('${item.productId}', -1)">−</button>
+            <strong>${item.qty}</strong>
+            <button type="button" onclick="changeCartQty('${item.productId}', 1)">+</button>
+            <button type="button" class="btn btn-sm btn-danger" style="margin-left:4px" onclick="removeFromCart('${item.productId}')">✕</button>
+          </div>
+        </div>`;
+      }).join('');
+      document.getElementById('cart-revenue').textContent = formatRupiah(revenue);
+      document.getElementById('cart-profit').textContent = formatRupiah(profit);
+      summary.classList.remove('hidden');
+    }
+
+    function checkoutCart() {
+      if (cart.length === 0) return;
+      const date = document.getElementById('cart-date').value || todayStr();
+      for (const item of cart) {
+        const p = data.products.find(x => x.id === item.productId);
+        if (!p || p.stock < item.qty) {
+          showAlert(`Stok ${item.name} tidak cukup`, 'error');
+          return;
+        }
+      }
+      for (const item of cart) {
+        const p = data.products.find(x => x.id === item.productId);
+        p.stock -= item.qty;
+        data.sales.push({
+          id: uid(), productId: item.productId, productName: item.name,
+          qty: item.qty, price: item.price, cost: item.cost,
+          revenue: item.price * item.qty, profit: (item.price - item.cost) * item.qty, date
+        });
+      }
+      saveData();
+      cart = [];
+      renderCart();
+      populateProductSelects();
+      showAlert('Penjualan berhasil disimpan! 🎉');
+    }
+
+    document.getElementById('quick-product')?.addEventListener('change', updateQuickPreview);
+    document.getElementById('quick-qty')?.addEventListener('input', updateQuickPreview);
+
+    function updateQuickPreview() {
+      const pid = document.getElementById('quick-product').value;
+      const qty = parseInt(document.getElementById('quick-qty').value, 10) || 0;
+      const box = document.getElementById('quick-preview');
+      if (!pid || qty < 1) { box.style.display = 'none'; return; }
+      const p = data.products.find(x => x.id === pid);
+      if (!p) return;
+      document.getElementById('quick-subtotal').textContent = formatRupiah(p.price * qty);
+      document.getElementById('quick-profit').textContent = formatRupiah((p.price - p.cost) * qty);
+      box.style.display = 'block';
+    }
+
+    function submitQuickSale(e) {
+      e.preventDefault();
+      const pid = document.getElementById('quick-product').value;
+      const qty = parseInt(document.getElementById('quick-qty').value, 10);
+      const date = document.getElementById('quick-date').value;
+      const p = data.products.find(x => x.id === pid);
+      if (!p) { showAlert('Pilih barang', 'error'); return false; }
+      if (qty < 1) { showAlert('Jumlah minimal 1', 'error'); return false; }
+      if (qty > p.stock) { showAlert('Stok tidak cukup. Sisa: ' + p.stock, 'error'); return false; }
+      p.stock -= qty;
+      data.sales.push({
+        id: uid(), productId: p.id, productName: p.name, qty,
+        price: p.price, cost: p.cost, revenue: p.price * qty,
+        profit: (p.price - p.cost) * qty, date
+      });
+      saveData();
+      showAlert('Penjualan berhasil dicatat!');
+      document.getElementById('form-quick-sale').reset();
+      document.getElementById('quick-date').value = todayStr();
+      document.getElementById('quick-preview').style.display = 'none';
+      populateProductSelects();
+      return false;
+    }
+
+    // EXPENSES
+    function openExpenseModal() {
+      document.getElementById('expense-note').value = '';
+      document.getElementById('expense-amount').value = '';
+      document.getElementById('expense-date').value = todayStr();
+      openModal('modal-expense');
+    }
+
+    function submitExpense(e) {
+      e.preventDefault();
+      const note = document.getElementById('expense-note').value.trim();
+      const amount = parseFloat(document.getElementById('expense-amount').value);
+      const date = document.getElementById('expense-date').value;
+      if (!note || !amount || amount < 1) { showAlert('Isi data dengan benar', 'error'); return false; }
+      data.expenses.push({ id: uid(), note, amount, date });
+      saveData();
+      closeModal('modal-expense');
+      showAlert('Pengeluaran dicatat');
+      if (document.getElementById('page-reports').classList.contains('active')) renderCurrentReport();
+      return false;
+    }
+
+    function deleteExpense(id) {
+      if (!confirm('Hapus pengeluaran ini?')) return;
+      data.expenses = data.expenses.filter(x => x.id !== id);
+      saveData();
+      renderCurrentReport();
+      showAlert('Pengeluaran dihapus', 'error');
+    }
+
+    function deleteSale(id) {
+      if (!confirm('Hapus transaksi ini? Stok akan dikembalikan.')) return;
+      const sale = data.sales.find(s => s.id === id);
+      if (sale) {
+        const p = data.products.find(x => x.id === sale.productId);
+        if (p) p.stock += sale.qty;
+        data.sales = data.sales.filter(s => s.id !== id);
+        saveData();
+        renderCurrentReport();
+        showAlert('Transaksi dihapus, stok dikembalikan', 'info');
+      }
+    }
+
+    // REPORTS
+    function switchReportTab(tab) {
+      document.querySelectorAll('#page-reports .tab').forEach(t => t.classList.remove('active'));
+      document.querySelector(`#page-reports .tab[data-tab="${tab}"]`).classList.add('active');
+      document.getElementById('report-sales').classList.toggle('hidden', tab !== 'sales');
+      document.getElementById('report-expense').classList.toggle('hidden', tab !== 'expense');
+      renderCurrentReport();
+    }
+
+    function renderCurrentReport() {
+      const activeTab = document.querySelector('#page-reports .tab.active')?.dataset.tab || 'sales';
+      if (activeTab === 'sales') renderSalesReport();
+      else renderExpenseReport();
+    }
+
+    function getFiltered(list) {
+      const from = document.getElementById('filter-from').value;
+      const to = document.getElementById('filter-to').value;
+      return list.filter(x => {
+        if (from && x.date < from) return false;
+        if (to && x.date > to) return false;
+        return true;
+      }).sort((a, b) => b.date.localeCompare(a.date) || b.id.localeCompare(a.id));
+    }
+
+    function renderSalesReport() {
+      const filtered = getFiltered(data.sales);
+      document.getElementById('r-sales-count').textContent = filtered.length;
+      document.getElementById('r-sales-revenue').textContent = formatRupiah(filtered.reduce((a, s) => a + s.revenue, 0));
+      document.getElementById('r-sales-cost').textContent = formatRupiah(filtered.reduce((a, s) => a + s.cost * s.qty, 0));
+      document.getElementById('r-sales-profit').textContent = formatRupiah(filtered.reduce((a, s) => a + s.profit, 0));
+      const el = document.getElementById('report-sales-list');
+      if (filtered.length === 0) {
+        el.innerHTML = `<div class="empty"><div class="icon">📊</div><p>Tidak ada transaksi</p></div>`;
+        return;
+      }
+      el.innerHTML = filtered.map(s => `
+        <div class="list-item">
+          <div class="list-header">
+            <span class="list-name">${escapeHtml(s.productName)} × ${s.qty}</span>
+            <span class="list-amount plus">+${formatRupiah(s.profit)}</span>
+          </div>
+          <div class="list-meta">${formatDate(s.date)} • Omzet ${formatRupiah(s.revenue)} • Modal ${formatRupiah(s.cost * s.qty)}</div>
+          <div class="list-actions"><button class="btn btn-sm btn-danger" onclick="deleteSale('${s.id}')">Hapus</button></div>
+        </div>`).join('');
+    }
+
+    function renderExpenseReport() {
+      const filtered = getFiltered(data.expenses);
+      document.getElementById('r-exp-count').textContent = filtered.length;
+      document.getElementById('r-exp-total').textContent = formatRupiah(filtered.reduce((a, e) => a + e.amount, 0));
+      const el = document.getElementById('report-expense-list');
+      if (filtered.length === 0) {
+        el.innerHTML = `<div class="empty"><div class="icon">💸</div><p>Belum ada pengeluaran</p></div>`;
+        return;
+      }
+      el.innerHTML = filtered.map(e => `
+        <div class="list-item">
+          <div class="list-header">
+            <span class="list-name">${escapeHtml(e.note)}</span>
+            <span class="list-amount minus">-${formatRupiah(e.amount)}</span>
+          </div>
+          <div class="list-meta">${formatDate(e.date)}</div>
+          <div class="list-actions"><button class="btn btn-sm btn-danger" onclick="deleteExpense('${e.id}')">Hapus</button></div>
+        </div>`).join('');
+    }
+
+    // DASHBOARD
+    function renderDashboard() {
+      const today = todayStr();
+      const todaySales = data.sales.filter(s => s.date === today);
+      const todayExpenses = data.expenses.filter(e => e.date === today);
+      const tRevenue = todaySales.reduce((a, s) => a + s.revenue, 0);
+      const tProfit = todaySales.reduce((a, s) => a + s.profit, 0);
+      const tExpense = todayExpenses.reduce((a, e) => a + e.amount, 0);
+      const allRevenue = data.sales.reduce((a, s) => a + s.revenue, 0);
+      const allCost = data.sales.reduce((a, s) => a + s.cost * s.qty, 0);
+      const allExpense = data.expenses.reduce((a, e) => a + e.amount, 0);
+
+      document.getElementById('stat-today-sales').textContent = formatRupiah(tRevenue);
+      document.getElementById('stat-today-profit').textContent = formatRupiah(tProfit);
+      document.getElementById('stat-today-expense').textContent = formatRupiah(tExpense);
+      document.getElementById('stat-net-today').textContent = formatRupiah(tProfit - tExpense);
+      document.getElementById('stat-total-revenue').textContent = formatRupiah(allRevenue);
+      document.getElementById('stat-total-cost').textContent = formatRupiah(allCost);
+      document.getElementById('stat-total-expense').textContent = formatRupiah(allExpense);
+      document.getElementById('stat-total-net').textContent = formatRupiah(allRevenue - allCost - allExpense);
+
+      const low = data.products.filter(p => p.stock <= 5).sort((a, b) => a.stock - b.stock);
+      const lowEl = document.getElementById('low-stock-list');
+      if (low.length === 0) lowEl.innerHTML = `<div class="empty"><div class="icon">✅</div><p>Semua stok aman</p></div>`;
+      else lowEl.innerHTML = low.slice(0, 6).map(p => `
+        <div class="list-item"><div class="list-header">
+          <span class="list-name">${escapeHtml(p.name)}</span>
+          <span class="badge badge-low">${p.stock} ${p.unit || 'pcs'}</span>
+        </div></div>`).join('');
+
+      const recent = [...data.sales].sort((a, b) => b.date.localeCompare(a.date) || b.id.localeCompare(a.id)).slice(0, 7);
+      const recentEl = document.getElementById('recent-tx');
+      if (recent.length === 0) recentEl.innerHTML = `<div class="empty"><div class="icon">📋</div><p>Belum ada transaksi</p></div>`;
+      else recentEl.innerHTML = recent.map(s => `
+        <div class="list-item">
+          <div class="list-header">
+            <span class="list-name">${escapeHtml(s.productName)} × ${s.qty}</span>
+            <span class="list-amount plus">+${formatRupiah(s.profit)}</span>
+          </div>
+          <div class="list-meta">${formatDate(s.date)} • ${formatRupiah(s.revenue)}</div>
+        </div>`).join('');
+    }
+
+    // BACKUP
+    function exportData() {
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `backup-jualan-${todayStr()}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      showAlert('Backup berhasil diunduh');
+    }
+
+    function importData(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        try {
+          const imported = JSON.parse(ev.target.result);
+          if (!imported.products || !imported.sales) throw new Error('invalid');
+          if (!imported.expenses) imported.expenses = [];
+          if (!confirm('Data saat ini akan diganti. Lanjutkan?')) return;
+          data = imported;
+          saveData();
+          showAlert('Data berhasil di-restore');
+          showPage('dashboard');
+        } catch (err) { showAlert('File tidak valid', 'error'); }
+      };
+      reader.readAsText(file);
+      e.target.value = '';
+    }
+
+    function clearAllData() {
+      data = { products: [], sales: [], expenses: [] };
+      cart = [];
+      saveData();
+      showAlert('Semua data telah dihapus', 'error');
+      showPage('dashboard');
+    }
+
+    // INIT
+    document.addEventListener('DOMContentLoaded', () => {
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('./sw.js').catch(() => {});
+      }
+      renderDashboard();
+      document.querySelectorAll('.modal-overlay').forEach(ov => {
+        ov.addEventListener('click', (e) => { if (e.target === ov) ov.classList.remove('show'); });
+      });
+    });
+  </script>
+</body>
+</html>
