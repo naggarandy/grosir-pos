@@ -144,9 +144,36 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 <!-- PRODUCTS -->
 <div id="page-products" class="page">
 <button class="btn btn-primary" onclick="openProductModal()">+ Tambah Barang Baru</button>
-<div class="search-box mt-2"><input type="text" id="search-product" placeholder="Cari nama barang..." oninput="renderProducts()"></div>
+
+<div class="tabs mt-2">
+<button class="tab active" data-tab="list" onclick="switchProductTab('list')">Daftar Barang</button>
+<button class="tab" data-tab="stock" onclick="switchProductTab('stock')">Lihat Stok</button>
+</div>
+
+<div id="products-list-view">
+<div class="search-box"><input type="text" id="search-product" placeholder="Cari nama barang..." oninput="renderProducts()"></div>
 <div class="section-title"><span>Daftar Barang (<span id="product-count">0</span>)</span></div>
 <div class="card" id="product-list"><div class="empty"><div class="icon">📦</div><p>Belum ada barang</p></div></div>
+</div>
+
+<div id="products-stock-view" class="hidden">
+<div class="card">
+<div class="card-title">Ringkasan Stok</div>
+<div class="flex-between mb-1"><span class="text-sm">Total Jenis Barang</span><strong id="stock-summary-count">0</strong></div>
+<div class="flex-between mb-1"><span class="text-sm">Total Stok (Pcs)</span><strong id="stock-summary-pcs">0</strong></div>
+<div class="flex-between mb-1"><span class="text-sm">Stok Menipis</span><strong id="stock-summary-low" style="color:var(--danger)">0</strong></div>
+</div>
+<div class="search-box"><input type="text" id="search-stock" placeholder="Cari barang..." oninput="renderStockView()"></div>
+<div class="section-title"><span>Stok Keseluruhan</span>
+<select id="stock-sort" onchange="renderStockView()" style="width:auto;padding:6px 10px;border-radius:8px;border:1px solid var(--border);font-size:.8rem">
+<option value="name">Nama A-Z</option>
+<option value="stock-asc">Stok Tersedikit</option>
+<option value="stock-desc">Stok Terbanyak</option>
+<option value="low">Stok Menipis Dulu</option>
+</select>
+</div>
+<div class="card" id="stock-view-list"><div class="empty"><div class="icon">📦</div><p>Belum ada barang</p></div></div>
+</div>
 </div>
 
 <!-- SALES -->
@@ -270,7 +297,19 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 <form id="form-product" onsubmit="return submitProduct(event)">
 <input type="hidden" id="product-id">
 <div class="form-group"><label>Nama Barang *</label><input type="text" id="product-name" required placeholder="Contoh: Aqua 600ml"></div>
-<div class="form-group"><label>Kategori (opsional)</label><input type="text" id="product-category" placeholder="Contoh: Minuman"></div>
+<div class="form-group"><label>Kategori</label>
+<select id="product-category">
+<option value="">-- Pilih Kategori --</option>
+<option value="Makanan">Makanan</option>
+<option value="Minuman">Minuman</option>
+<option value="Snack">Snack</option>
+<option value="custom">Isi sendiri...</option>
+</select>
+</div>
+<div class="form-group hidden" id="custom-category-wrap">
+<label>Kategori Custom</label>
+<input type="text" id="product-category-custom" placeholder="Contoh: Rokok, Sabun, dll">
+</div>
 <div class="form-group"><label>Isi per Karton *</label>
 <select id="product-pcs-per-karton">
 <option value="1">Tidak pakai karton (hanya pcs)</option>
@@ -287,8 +326,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 <div class="form-group"><label>Stok Awal (Pcs)</label><input type="number" id="product-stock-pcs" min="0" value="0"></div>
 </div>
 <p class="hint">Contoh: 5 Karton + 3 Pcs → isi 5 dan 3</p>
-<div class="form-group"><label>Harga Modal / Pcs *</label><input type="number" id="product-cost" min="0" required placeholder="2000"></div>
-<div class="form-group"><label>Harga Jual / Karton</label><input type="number" id="product-price-karton" min="0" placeholder="Contoh: 30000"><p class="hint">Isi ini → harga pcs otomatis terisi (dibulatkan ke atas)</p></div>
+<div class="form-group"><label>Harga Modal / Karton</label><input type="number" id="product-cost-karton" min="0" placeholder="Contoh: 24000"><p class="hint">Isi ini → harga modal per pcs otomatis terisi (dibulatkan ke atas)</p></div>
+<div class="form-group"><label>Harga Modal / Pcs *</label><input type="number" id="product-cost" min="0" required placeholder="Otomatis / isi manual"></div>
+<div class="form-group"><label>Harga Jual / Karton</label><input type="number" id="product-price-karton" min="0" placeholder="Contoh: 30000"><p class="hint">Isi ini → harga jual per pcs otomatis terisi (dibulatkan ke atas)</p></div>
 <div class="form-group"><label>Harga Jual / Pcs *</label><input type="number" id="product-price-pcs" min="0" required placeholder="Otomatis / isi manual"></div>
 <div class="btn-group"><button type="button" class="btn btn-secondary" onclick="closeModal('modal-product')">Batal</button><button type="submit" class="btn btn-primary">Simpan</button></div>
 </form>
@@ -341,16 +381,89 @@ function formatStock(p){const ppk=p.pcsPerKarton||1;if(ppk<=1)return p.stockPcs+
 function getPrice(p,u){if(u==='karton')return p.pricePerKarton>0?p.pricePerKarton:(p.pricePerPcs*(p.pcsPerKarton||1));return p.pricePerPcs}
 function getCost(p,u){if(u==='karton')return p.costPerPcs*(p.pcsPerKarton||1);return p.costPerPcs}
 function toPcs(q,u,ppk){return u==='karton'?q*(ppk||1):q}
-function showPage(page){document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));document.getElementById('page-'+page).classList.add('active');const n=document.querySelector('.nav-item[data-page="'+page+'"]');if(n)n.classList.add('active');if(page==='dashboard')renderDashboard();if(page==='products')renderProducts();if(page==='sales'){populateProductSelects();renderCart();document.getElementById('cart-date').value=todayStr();document.getElementById('quick-date').value=todayStr()}if(page==='reports'){if(!document.getElementById('filter-from').value){document.getElementById('filter-from').value=todayStr();document.getElementById('filter-to').value=todayStr()}renderCurrentReport()}}
+function showPage(page){document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));document.getElementById('page-'+page).classList.add('active');const n=document.querySelector('.nav-item[data-page="'+page+'"]');if(n)n.classList.add('active');if(page==='dashboard')renderDashboard();if(page==='products'){switchProductTab('list');renderProducts();}if(page==='sales'){populateProductSelects();renderCart();document.getElementById('cart-date').value=todayStr();document.getElementById('quick-date').value=todayStr()}if(page==='reports'){if(!document.getElementById('filter-from').value){document.getElementById('filter-from').value=todayStr();document.getElementById('filter-to').value=todayStr()}renderCurrentReport()}}
 function openModal(id){document.getElementById(id).classList.add('show')}
 function closeModal(id){document.getElementById(id).classList.remove('show')}
-document.getElementById('product-pcs-per-karton').addEventListener('change',function(){document.getElementById('custom-pcs-wrap').classList.toggle('hidden',this.value!=='custom');autoPriceFromKarton()});
+document.getElementById('product-pcs-per-karton').addEventListener('change',function(){document.getElementById('custom-pcs-wrap').classList.toggle('hidden',this.value!=='custom');autoCostFromKarton();autoPriceFromKarton()});
+document.getElementById('product-category')?.addEventListener('change',function(){
+  document.getElementById('custom-category-wrap').classList.toggle('hidden', this.value !== 'custom');
+  if(this.value !== 'custom') document.getElementById('product-category-custom').value = '';
+});
+
 document.getElementById('product-custom-pcs')?.addEventListener('input',autoPriceFromKarton);
 document.getElementById('product-price-karton')?.addEventListener('input',autoPriceFromKarton);
 function getPcsPerKartonForm(){let v=document.getElementById('product-pcs-per-karton').value;if(v==='custom')return parseInt(document.getElementById('product-custom-pcs').value,10)||1;return parseInt(v,10)||1}
 function autoPriceFromKarton(){const karton=parseFloat(document.getElementById('product-price-karton').value);if(!karton||karton<=0)return;const ppk=getPcsPerKartonForm();if(ppk<1)return;document.getElementById('product-price-pcs').value=Math.ceil(karton/ppk)}
-function openProductModal(id=null){document.getElementById('form-product').reset();document.getElementById('product-id').value='';document.getElementById('product-pcs-per-karton').value='12';document.getElementById('custom-pcs-wrap').classList.add('hidden');document.getElementById('modal-product-title').textContent='Tambah Barang';if(id){const p=data.products.find(x=>x.id===id);if(p){document.getElementById('modal-product-title').textContent='Edit Barang';document.getElementById('product-id').value=p.id;document.getElementById('product-name').value=p.name;document.getElementById('product-category').value=p.category||'';const ppk=p.pcsPerKarton||1;const sel=document.getElementById('product-pcs-per-karton');if([1,4,6,12,24].includes(ppk)){sel.value=String(ppk);document.getElementById('custom-pcs-wrap').classList.add('hidden')}else{sel.value='custom';document.getElementById('custom-pcs-wrap').classList.remove('hidden');document.getElementById('product-custom-pcs').value=ppk}const k=Math.floor(p.stockPcs/ppk),s=p.stockPcs%ppk;document.getElementById('product-stock-karton').value=k;document.getElementById('product-stock-pcs').value=s;document.getElementById('product-cost').value=p.costPerPcs;document.getElementById('product-price-pcs').value=p.pricePerPcs;document.getElementById('product-price-karton').value=p.pricePerKarton||''}}openModal('modal-product')}
-function submitProduct(e){e.preventDefault();const id=document.getElementById('product-id').value;const name=document.getElementById('product-name').value.trim();const category=document.getElementById('product-category').value.trim();let ppk=document.getElementById('product-pcs-per-karton').value;if(ppk==='custom')ppk=parseInt(document.getElementById('product-custom-pcs').value,10)||1;else ppk=parseInt(ppk,10);const sk=parseInt(document.getElementById('product-stock-karton').value,10)||0;const sp=parseInt(document.getElementById('product-stock-pcs').value,10)||0;const stockPcs=sk*ppk+sp;const cost=parseFloat(document.getElementById('product-cost').value);const pricePcs=parseFloat(document.getElementById('product-price-pcs').value);let priceKarton=parseFloat(document.getElementById('product-price-karton').value)||0;if(!name||isNaN(cost)||isNaN(pricePcs)){showAlert('Lengkapi data','error');return false}if(id){const p=data.products.find(x=>x.id===id);if(p)Object.assign(p,{name,category,pcsPerKarton:ppk,stockPcs,costPerPcs:cost,pricePerPcs:pricePcs,pricePerKarton:priceKarton})}else{data.products.push({id:uid(),name,category,pcsPerKarton:ppk,stockPcs,costPerPcs:cost,pricePerPcs:pricePcs,pricePerKarton:priceKarton})}saveData();closeModal('modal-product');renderProducts();showAlert(id?'Barang diperbarui':'Barang ditambahkan');return false}
+function autoCostFromKarton(){const karton=parseFloat(document.getElementById('product-cost-karton').value);if(!karton||karton<=0)return;const ppk=getPcsPerKartonForm();if(ppk<1)return;document.getElementById('product-cost').value=Math.ceil(karton/ppk)}
+document.getElementById('product-cost-karton')?.addEventListener('input',autoCostFromKarton);
+document.getElementById('product-pcs-per-karton')?.addEventListener('change',function(){autoCostFromKarton();autoPriceFromKarton()});
+document.getElementById('product-custom-pcs')?.addEventListener('input',function(){autoCostFromKarton();autoPriceFromKarton()});
+function openProductModal(id=null){document.getElementById('form-product').reset();document.getElementById('product-id').value='';document.getElementById('product-pcs-per-karton').value='12';document.getElementById('custom-pcs-wrap').classList.add('hidden');document.getElementById('custom-category-wrap')?.classList.add('hidden');document.getElementById('modal-product-title').textContent='Tambah Barang';if(id){const p=data.products.find(x=>x.id===id);if(p){document.getElementById('modal-product-title').textContent='Edit Barang';document.getElementById('product-id').value=p.id;document.getElementById('product-name').value=p.name;const cat=p.category||'';
+          const catSel=document.getElementById('product-category');
+          if(['Makanan','Minuman','Snack',''].includes(cat)){
+            catSel.value=cat;
+            document.getElementById('custom-category-wrap').classList.add('hidden');
+            document.getElementById('product-category-custom').value='';
+          } else {
+            catSel.value='custom';
+            document.getElementById('custom-category-wrap').classList.remove('hidden');
+            document.getElementById('product-category-custom').value=cat;
+          }
+const ppk=p.pcsPerKarton||1;const sel=document.getElementById('product-pcs-per-karton');if([1,4,6,12,24].includes(ppk)){sel.value=String(ppk);document.getElementById('custom-pcs-wrap').classList.add('hidden')}else{sel.value='custom';document.getElementById('custom-pcs-wrap').classList.remove('hidden');document.getElementById('product-custom-pcs').value=ppk}const k=Math.floor(p.stockPcs/ppk),s=p.stockPcs%ppk;document.getElementById('product-stock-karton').value=k;document.getElementById('product-stock-pcs').value=s;document.getElementById('product-cost').value=p.costPerPcs;document.getElementById('product-cost-karton').value='';document.getElementById('product-price-pcs').value=p.pricePerPcs;document.getElementById('product-price-karton').value=p.pricePerKarton||''}}openModal('modal-product')}
+function submitProduct(e){e.preventDefault();const id=document.getElementById('product-id').value;const name=document.getElementById('product-name').value.trim();let category=document.getElementById('product-category').value;
+      if(category==='custom') category=(document.getElementById('product-category-custom').value||'').trim();
+      else category=category.trim();
+let ppk=document.getElementById('product-pcs-per-karton').value;if(ppk==='custom')ppk=parseInt(document.getElementById('product-custom-pcs').value,10)||1;else ppk=parseInt(ppk,10);const sk=parseInt(document.getElementById('product-stock-karton').value,10)||0;const sp=parseInt(document.getElementById('product-stock-pcs').value,10)||0;const stockPcs=sk*ppk+sp;const cost=parseFloat(document.getElementById('product-cost').value);const pricePcs=parseFloat(document.getElementById('product-price-pcs').value);let priceKarton=parseFloat(document.getElementById('product-price-karton').value)||0;if(!name||isNaN(cost)||isNaN(pricePcs)){showAlert('Lengkapi data','error');return false}if(id){const p=data.products.find(x=>x.id===id);if(p)Object.assign(p,{name,category,pcsPerKarton:ppk,stockPcs,costPerPcs:cost,pricePerPcs:pricePcs,pricePerKarton:priceKarton})}else{data.products.push({id:uid(),name,category,pcsPerKarton:ppk,stockPcs,costPerPcs:cost,pricePerPcs:pricePcs,pricePerKarton:priceKarton})}saveData();closeModal('modal-product');renderProducts();showAlert(id?'Barang diperbarui':'Barang ditambahkan');return false}
+
+function switchProductTab(tab){
+  document.querySelectorAll('#page-products .tab').forEach(t=>t.classList.remove('active'));
+  document.querySelector('#page-products .tab[data-tab="'+tab+'"]').classList.add('active');
+  document.getElementById('products-list-view').classList.toggle('hidden', tab!=='list');
+  document.getElementById('products-stock-view').classList.toggle('hidden', tab!=='stock');
+  if(tab==='stock') renderStockView();
+  if(tab==='list') renderProducts();
+}
+function renderStockView(){
+  const q=(document.getElementById('search-stock')?.value||'').toLowerCase().trim();
+  const sort=document.getElementById('stock-sort')?.value||'name';
+  let list=[...data.products];
+  if(q) list=list.filter(p=>p.name.toLowerCase().includes(q)||(p.category||'').toLowerCase().includes(q));
+  if(sort==='name') list.sort((a,b)=>a.name.localeCompare(b.name));
+  else if(sort==='stock-asc') list.sort((a,b)=>a.stockPcs-b.stockPcs);
+  else if(sort==='stock-desc') list.sort((a,b)=>b.stockPcs-a.stockPcs);
+  else if(sort==='low') list.sort((a,b)=>{
+    const al=a.stockPcs<=(a.pcsPerKarton||1)?0:1;
+    const bl=b.stockPcs<=(b.pcsPerKarton||1)?0:1;
+    if(al!==bl) return al-bl;
+    return a.stockPcs-b.stockPcs;
+  });
+  const totalPcs=data.products.reduce((a,p)=>a+p.stockPcs,0);
+  const lowCount=data.products.filter(p=>p.stockPcs<=(p.pcsPerKarton||1)).length;
+  document.getElementById('stock-summary-count').textContent=data.products.length;
+  document.getElementById('stock-summary-pcs').textContent=totalPcs.toLocaleString('id-ID');
+  document.getElementById('stock-summary-low').textContent=lowCount;
+  const el=document.getElementById('stock-view-list');
+  if(!list.length){
+    el.innerHTML='<div class="empty"><div class="icon">📦</div><p>'+(q?'Tidak ditemukan':'Belum ada barang')+'</p></div>';
+    return;
+  }
+  el.innerHTML=list.map(p=>{
+    const low=p.stockPcs<=(p.pcsPerKarton||1);
+    const ppk=p.pcsPerKarton||1;
+    return `<div class="list-item">
+      <div class="list-header">
+        <span class="list-name">${escapeHtml(p.name)}${p.category?` <span class="badge badge-cat">${escapeHtml(p.category)}</span>`:''}</span>
+        <span class="badge ${low?'badge-low':'badge-ok'}">${formatStock(p)}</span>
+      </div>
+      <div class="list-meta">${ppk>1?`1 Karton = ${ppk} pcs • `:''}Modal ${formatRupiah(p.costPerPcs)}/pcs</div>
+      <div class="list-actions">
+        <button class="btn btn-sm btn-primary" onclick="openAddStock('${p.id}')">+ Stok</button>
+        <button class="btn btn-sm btn-secondary" onclick="openProductModal('${p.id}')">Edit</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
 function renderProducts(){const q=(document.getElementById('search-product')?.value||'').toLowerCase().trim();let list=data.products;if(q)list=list.filter(p=>p.name.toLowerCase().includes(q)||(p.category||'').toLowerCase().includes(q));document.getElementById('product-count').textContent=data.products.length;const el=document.getElementById('product-list');if(!list.length){el.innerHTML='<div class="empty"><div class="icon">📦</div><p>'+(q?'Tidak ditemukan':'Belum ada barang')+'</p></div>';return}el.innerHTML=list.map(p=>{const low=p.stockPcs<=(p.pcsPerKarton||1);const ppk=p.pcsPerKarton||1;return`<div class="product-item"><div class="product-info"><h3>${escapeHtml(p.name)}${p.category?`<span class="badge badge-cat">${escapeHtml(p.category)}</span>`:''}</h3><div class="meta">${ppk>1?`1 Karton = ${ppk} pcs • `:''}Modal ${formatRupiah(p.costPerPcs)}/pcs → Jual ${formatRupiah(p.pricePerPcs)}/pcs</div><div class="product-actions"><button class="btn btn-sm btn-secondary" onclick="openProductModal('${p.id}')">✏️ Edit</button><button class="btn btn-sm btn-primary" onclick="openAddStock('${p.id}')">+ Stok</button><button class="btn btn-sm btn-danger" onclick="deleteProduct('${p.id}')">Hapus</button></div></div><div class="product-stock"><div class="qty ${low?'low':''}">${formatStock(p)}</div><span class="badge ${low?'badge-low':'badge-ok'}">${low?'Menipis':'Aman'}</span></div></div>`}).join('')}
 function openAddStock(id){const p=data.products.find(x=>x.id===id);if(!p)return;document.getElementById('stock-product-id').value=id;document.getElementById('stock-product-name').textContent=p.name;document.getElementById('stock-current').textContent='Stok sekarang: '+formatStock(p);document.getElementById('stock-karton').value=0;document.getElementById('stock-pcs').value=0;openModal('modal-stock')}
 function submitStock(e){e.preventDefault();const id=document.getElementById('stock-product-id').value;const k=parseInt(document.getElementById('stock-karton').value,10)||0;const pcs=parseInt(document.getElementById('stock-pcs').value,10)||0;const p=data.products.find(x=>x.id===id);if(!p)return false;const add=k*(p.pcsPerKarton||1)+pcs;if(add<1){showAlert('Isi jumlah karton atau pcs','error');return false}p.stockPcs+=add;saveData();closeModal('modal-stock');renderProducts();showAlert('Stok berhasil ditambahkan');return false}
